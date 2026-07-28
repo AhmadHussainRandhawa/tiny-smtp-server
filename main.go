@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"net"
+	"strings"
 )
 
 func main() {
@@ -27,4 +29,18 @@ func main() {
 	fmt.Println("Client connected:", conn.RemoteAddr())
 
 	fmt.Fprint(conn, "220 localhost Tiny SMTP Server Ready\r\n")
+
+	reader := bufio.NewReader(conn)
+
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Println("Client disconnected:", err)
+			return
+		}
+
+		line = strings.TrimRight(line, "\r\n")
+
+		fmt.Println("Client:", line)
+	}
 }
