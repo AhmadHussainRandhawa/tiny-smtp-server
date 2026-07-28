@@ -41,6 +41,25 @@ func main() {
 
 		line = strings.TrimRight(line, "\r\n")
 
+		if line == "" {
+			continue
+		}
+
 		fmt.Println("Client:", line)
+
+		parts := strings.Fields(line)
+		if len(parts) == 0 {
+			continue
+		}
+
+		command := strings.ToUpper(parts[0])
+
+		switch command {
+		case "EHLO", "HELO":
+			fmt.Fprint(conn, "250 localhost Hello\r\n")
+		default:
+			fmt.Fprint(conn, "500 command not recognized\r\n")
+		}
+
 	}
 }
