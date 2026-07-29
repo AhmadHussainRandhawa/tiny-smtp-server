@@ -35,6 +35,7 @@ func main() {
 	var greeted bool
 	var mailFrom string
 	var recipients []string
+	var messageLines []string
 
 	for {
 		line, err := reader.ReadString('\n')
@@ -112,6 +113,42 @@ func main() {
 			recipients = append(recipients, recipient)
 
 			fmt.Fprint(conn, "250 Recipient accepted\r\n")
+
+		case "DATA":
+			if mailFrom == "" {
+				fmt.Fprint(conn, "503 Send MAIL FROM first\r\n")
+				continue
+			}
+
+			if len(recipients) == 0 {
+				fmt.Fprint(conn, "503 Send RCPT TO first\r\n")
+				continue
+			}
+
+			fmt.Fprint(conn, "354 End data with <CRLF>.<CRLF>\r\n")
+
+			messageLines = nil
+
+			for {
+				messageLine, err := reader.ReadString('\n')
+				if err != nil {
+					fmt.Println("Failed to read message:", err)
+					return
+				}
+
+				messageLine = strings.TrimRight(messageLine, "\r\n")
+
+				if messageLine == "." {
+					break
+				}
+
+				messageLines = append(messageLines, messageLine)
+			}
+
+			fmt.Println("\nMessage received:")
+			fmt.Println(strings.Join(messageLines, "\n"))
+
+			fmt.Fprint(conn, "250 Message accepted\r\n")
 
 		default:
 			fmt.Fprint(conn, "500 command not recognized\r\n")
