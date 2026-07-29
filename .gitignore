@@ -43,3 +43,5 @@ go.sum
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
+messages
+messages/message.eml

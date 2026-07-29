@@ -4,7 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"os"
+	"path/filepath"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -15,6 +18,11 @@ func main() {
 	}
 
 	defer listener.Close()
+
+	err = os.MkdirAll("messages", 0755)
+	if err != nil {
+		fmt.Println("Failed to create messages directory:", err)
+	}
 
 	fmt.Println("SMTP server listening on 127.0.0.1:2525")
 
@@ -145,9 +153,18 @@ func main() {
 				messageLines = append(messageLines, messageLine)
 			}
 
-			fmt.Println("\nMessage received:")
-			fmt.Println(strings.Join(messageLines, "\n"))
+			message := strings.Join(messageLines, "\r\n")
+			fileName := filepath.Join(
+				"messages", fmt.Sprintf("message-%s.eml", time.Now().Format("20060102-150405.000000000")))
 
+			err := os.WriteFile(fileName, []byte(message), 0644)
+			if err != nil {
+				fmt.Println("Failed to save message:", err)
+				fmt.Fprint(conn, "451 Failed to store message\r\n")
+				continue
+			}
+
+			fmt.Println("Message saved to:", fileName)
 			fmt.Fprint(conn, "250 Message accepted\r\n")
 
 		default:
