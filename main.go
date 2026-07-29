@@ -167,6 +167,15 @@ func main() {
 			fmt.Println("Message saved to:", fileName)
 			fmt.Fprint(conn, "250 Message accepted\r\n")
 
+			mailFrom = ""
+			recipients = nil
+			messageLines = nil
+
+		case "QUIT":
+			fmt.Fprint(conn, "221 Bye\r\n")
+			fmt.Println("Client ended the SMTP session")
+			return
+
 		default:
 			fmt.Fprint(conn, "500 command not recognized\r\n")
 		}

@@ -45,3 +45,4 @@ go.sum
 
 messages
 messages/message.eml
+tiny-smtp-server
