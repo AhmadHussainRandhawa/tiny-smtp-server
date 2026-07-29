@@ -32,6 +32,10 @@ func main() {
 
 	reader := bufio.NewReader(conn)
 
+	var greeted bool
+	var mailFrom string
+	var recipients []string
+
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
@@ -56,7 +60,59 @@ func main() {
 
 		switch command {
 		case "EHLO", "HELO":
-			fmt.Fprint(conn, "250 localhost Hello\r\n")
+			if len(parts) < 2 {
+				fmt.Fprint(conn, "501 HELO/EHLO requires a domain\r\n")
+				continue
+			}
+
+			greeted = true
+
+			fmt.Fprintf(conn, "250 %s Hello\r\n", parts[1])
+
+		case "MAIL":
+			if !greeted {
+				fmt.Fprint(conn, "503 send HELO/EHLO first\r\n")
+				continue
+			}
+
+			if !strings.HasPrefix(strings.ToUpper(line), "MAIL FROM:") {
+				fmt.Fprint(conn, "501 Syntax: MAIL FROM:<address>\r\n")
+				continue
+			}
+
+			mailFrom = strings.TrimSpace(line[len("MAIL FROM:"):])
+
+			if mailFrom == "" {
+				fmt.Fprint(conn, "501 Sender address is required\r\n")
+				continue
+			}
+
+			recipients = nil
+
+			fmt.Fprint(conn, "250 Sender accepted\r\n")
+
+		case "RCPT":
+			if mailFrom == "" {
+				fmt.Fprint(conn, "503 send MAIL FROM first\r\n")
+				continue
+			}
+
+			if !strings.HasPrefix(strings.ToUpper(line), "RCPT TO:") {
+				fmt.Fprint(conn, "501 Syntax: RCPT TO:<address>\r\n")
+				continue
+			}
+
+			recipient := strings.TrimSpace(line[len("RCPT TO:"):])
+
+			if recipient == "" {
+				fmt.Fprint(conn, "501 Recipient address is required\r\n")
+				continue
+			}
+
+			recipients = append(recipients, recipient)
+
+			fmt.Fprint(conn, "250 Recipient accepted\r\n")
+
 		default:
 			fmt.Fprint(conn, "500 command not recognized\r\n")
 		}
